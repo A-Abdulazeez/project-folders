@@ -1,4 +1,4 @@
 package a2zDev.safeBank.services;
 
-public class TransactionServiceImpl implements TransactionService {
+public class TransactionServiceImpl {
 }
