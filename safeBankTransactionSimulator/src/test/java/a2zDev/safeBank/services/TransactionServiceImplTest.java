@@ -191,4 +191,45 @@ public class TransactionServiceImplTest {
         assertEquals(1, transactionRepository.findByAccountId(account.getId()).size());
     }
 
+    @Test
+    public void getTransactionHistoryShouldReturnAllAccountTransactions() {
+        transactionService.deposit(account.getId(), new BigDecimal("10000"));
+        transactionService.withdraw(account.getId(), new BigDecimal("5000"));
+
+        List<TransactionResponse> history = transactionService.getTransactionHistory(account.getId());
+
+        assertEquals(2, history.size());
+        assertEquals(TransactionType.DEPOSIT, history.get(0).getType());
+        assertEquals(TransactionType.WITHDRAW, history.get(1).getType());
+    }
+
+    @Test
+    public void getTransactionHistoryShouldReturnEmptyListWhenNoTransactionsExist() {
+        List<TransactionResponse> history = transactionService.getTransactionHistory(account.getId());
+
+        assertNotNull(history);
+        assertTrue(history.isEmpty());
+    }
+
+    @Test
+    public void getTransactionHistoryShouldReturnOnlyTransactionsForSpecifiedAccount() {
+        Account anotherAccount = new Account();
+        anotherAccount.setAccountHolderName("Buruji");
+        anotherAccount.setBalance(new BigDecimal("30000"));
+        accountRepository.save(anotherAccount);
+
+        transactionService.deposit(account.getId(), new BigDecimal("5000"));
+        transactionService.deposit(anotherAccount.getId(), new BigDecimal("10000"));
+
+        List<TransactionResponse> history = transactionService.getTransactionHistory(account.getId());
+
+        assertEquals(1, history.size());
+        assertEquals(new BigDecimal("5000"), history.get(0).getAmount());
+    }
+
+    @Test
+    public void getTransactionHistoryShouldThrowExceptionForUnknownAccount() {
+        assertThrows(InvalidAccountException.class, () -> transactionService.getTransactionHistory(UUID.randomUUID()));
+    }
+
 }

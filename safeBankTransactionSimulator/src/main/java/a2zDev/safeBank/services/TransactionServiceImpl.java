@@ -11,6 +11,8 @@ import a2zDev.safeBank.exception.InvalidAccountException;
 import a2zDev.safeBank.exception.WithdrawalLimitExceededException;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static a2zDev.safeBank.utils.Mapper.map;
@@ -60,5 +62,17 @@ public class TransactionServiceImpl {
         Transaction savedTransaction = transactionRepository.save(account.getId(), transaction);
 
         return map(savedTransaction);
+    }
+
+    public List<TransactionResponse> getTransactionHistory(UUID accountId) {
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new InvalidAccountException("Account not found"));
+        List<TransactionResponse> allTransactions = new ArrayList<>();
+
+        List<Transaction> transactions = transactionRepository.findByAccountId(account.getId());
+
+        for (Transaction transaction : transactions) {
+            allTransactions.add(map(transaction));
+        }
+        return allTransactions;
     }
 }
