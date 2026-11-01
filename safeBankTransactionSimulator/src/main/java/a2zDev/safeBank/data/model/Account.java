@@ -9,13 +9,13 @@ public class Account {
     private String accountHolderName;
     private BigDecimal balance;
 
+    public Account() {
+        this.id = UUID.randomUUID();
+    }
+
 
     public UUID getId() {
         return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = UUID.randomUUID();
     }
 
     public String getAccountHolderName() {
