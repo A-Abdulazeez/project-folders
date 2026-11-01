@@ -12,13 +12,15 @@ public class Transaction {
     private BigDecimal balanceAfter;
     private LocalDateTime createdAt;
 
+    public Transaction() {
+        this.id = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+    }
+
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = UUID.randomUUID();
-    }
 
     public TransactionType getType() {
         return type;
@@ -48,7 +50,4 @@ public class Transaction {
         return createdAt;
     }
 
-    public void setCreatedAt() {
-        this.createdAt = LocalDateTime.now();
-    }
 }
