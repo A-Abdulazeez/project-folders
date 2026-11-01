@@ -3,12 +3,14 @@ package a2zDev.safeBank.services;
 import a2zDev.safeBank.data.repositories.AccountRepository;
 import a2zDev.safeBank.dtos.request.CreateAccountRequest;
 import a2zDev.safeBank.dtos.response.AccountResponse;
+import a2zDev.safeBank.exception.InvalidAccountException;
 import a2zDev.safeBank.exception.InvalidAccountNameException;
 import a2zDev.safeBank.exception.InvalidAmountException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,6 +74,22 @@ public class AccountServiceImplTest {
         secondRequest.setOpeningBalance(new BigDecimal("10000"));
         AccountResponse secondAccount = accountService.createAccount(secondRequest);
         assertNotEquals(firstAccount.getAccountId(), secondAccount.getAccountId());
+    }
+
+    @Test
+    public void getAccountShouldReturnAccountSuccessfully() {
+        AccountResponse createdAccount = accountService.createAccount(request);
+        AccountResponse response = accountService.getAccount(createdAccount.getAccountId());
+
+        assertNotNull(response);
+        assertNotNull(response.getAccountId());
+        assertEquals("Abdullahi", response.getAccountHolderName());
+        assertEquals(new BigDecimal("50000.00"), response.getOpeningBalance());
+    }
+
+    @Test
+    public void getAccountShouldThrowExceptionWhenAccountDoesNotExist() {
+        assertThrows(InvalidAccountException.class, () -> accountService.getAccount(UUID.randomUUID()));
     }
 
 }
