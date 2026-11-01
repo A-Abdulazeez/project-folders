@@ -6,7 +6,9 @@ import a2zDev.safeBank.data.model.TransactionType;
 import a2zDev.safeBank.data.repositories.AccountRepository;
 import a2zDev.safeBank.data.repositories.TransactionRepository;
 import a2zDev.safeBank.dtos.response.TransactionResponse;
+import a2zDev.safeBank.exception.InsufficientFundsException;
 import a2zDev.safeBank.exception.InvalidAccountException;
+import a2zDev.safeBank.exception.WithdrawalLimitExceededException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -18,6 +20,8 @@ public class TransactionServiceImpl {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+
+    private static final BigDecimal WITHDRAWAL_CAP = new BigDecimal("100000");
 
     public TransactionServiceImpl(AccountRepository accountRepository, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
@@ -34,6 +38,25 @@ public class TransactionServiceImpl {
         transaction.setAmount(amount);
         transaction.setType(TransactionType.DEPOSIT);
         transaction.setBalanceAfter(updatedBalance);
+        Transaction savedTransaction = transactionRepository.save(account.getId(), transaction);
+
+        return map(savedTransaction);
+    }
+
+    public TransactionResponse withdraw(UUID accountId, BigDecimal amount) {
+        validate(amount);
+        if (amount.compareTo(WITHDRAWAL_CAP) > 0) throw new WithdrawalLimitExceededException("Maximum withdrawal limit is ₦100,000");
+
+        Account account = accountRepository.findById(accountId).orElseThrow(() -> new InvalidAccountException("Account not found"));
+        if (amount.compareTo(account.getBalance()) > 0) throw new InsufficientFundsException("Insufficient account balance");
+
+        BigDecimal newBalance = account.getBalance().subtract(amount);
+        account.setBalance(newBalance);
+
+        Transaction transaction = new Transaction();
+        transaction.setAmount(amount);
+        transaction.setType(TransactionType.WITHDRAW);
+        transaction.setBalanceAfter(newBalance);
         Transaction savedTransaction = transactionRepository.save(account.getId(), transaction);
 
         return map(savedTransaction);

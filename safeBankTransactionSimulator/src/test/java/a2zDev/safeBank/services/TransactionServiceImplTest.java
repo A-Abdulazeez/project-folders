@@ -6,8 +6,10 @@ import a2zDev.safeBank.data.model.TransactionType;
 import a2zDev.safeBank.data.repositories.AccountRepository;
 import a2zDev.safeBank.data.repositories.TransactionRepository;
 import a2zDev.safeBank.dtos.response.TransactionResponse;
+import a2zDev.safeBank.exception.InsufficientFundsException;
 import a2zDev.safeBank.exception.InvalidAccountException;
 import a2zDev.safeBank.exception.InvalidAmountException;
+import a2zDev.safeBank.exception.WithdrawalLimitExceededException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -100,6 +102,93 @@ public class TransactionServiceImplTest {
 
         assertEquals(2, transactions.size());
         assertEquals(new BigDecimal("65000"), account.getBalance());
+    }
+
+    @Test
+    public void withdrawShouldDecreaseAccountBalance() {
+        transactionService.withdraw(account.getId(), new BigDecimal("10000"));
+        assertEquals(new BigDecimal("40000"), account.getBalance());
+    }
+
+    @Test
+    public void withdrawShouldReturnTransactionResponse() {
+        TransactionResponse response = transactionService.withdraw(account.getId(), new BigDecimal("10000"));
+
+        assertNotNull(response);
+        assertEquals(TransactionType.WITHDRAW, response.getType());
+        assertEquals(new BigDecimal("10000"), response.getAmount());
+        assertEquals(new BigDecimal("40000"), response.getBalanceAfter());
+        assertNotNull(response.getCreatedAt());
+    }
+
+    @Test
+    public void withdrawalShouldSaveTransactionToRepository() {
+        transactionService.withdraw(account.getId(), new BigDecimal("10000"));
+        List<Transaction> transactions = transactionRepository.findByAccountId(account.getId());
+
+        assertEquals(1, transactions.size());
+        assertEquals(TransactionType.WITHDRAW, transactions.get(0).getType());
+    }
+
+    @Test
+    public void withdrawShouldRejectZeroAmount() {
+        assertThrows(InvalidAmountException.class, () -> transactionService.withdraw(account.getId(), BigDecimal.ZERO));
+
+        assertEquals(new BigDecimal("50000"), account.getBalance());
+        assertTrue(transactionRepository.findByAccountId(account.getId()).isEmpty());
+    }
+
+    @Test
+    public void withdrawalShouldRejectNegativeAmount() {
+        assertThrows(InvalidAmountException.class, () -> transactionService.withdraw(account.getId(), new BigDecimal("-500")));
+
+        assertEquals(new BigDecimal("50000"), account.getBalance());
+        assertTrue(transactionRepository.findByAccountId(account.getId()).isEmpty());
+    }
+
+    @Test
+    public void withdrawShouldRejectNullAmount() {
+        assertThrows(InvalidAmountException.class, () -> transactionService.withdraw(account.getId(), null));
+    }
+
+    @Test
+    public void withdrawShouldRejectAmountAboveWithdrawalLimit() {
+        account.setBalance(new BigDecimal("200000"));
+        assertThrows(WithdrawalLimitExceededException.class, () -> transactionService.withdraw(account.getId(), new BigDecimal("120000")));
+
+        assertEquals(new BigDecimal("200000"), account.getBalance());
+        assertTrue(transactionRepository.findByAccountId(account.getId()).isEmpty());
+    }
+
+    @Test
+    public void withdrawShouldRejectAmountAboveAvailableBalance() {
+        assertThrows(InsufficientFundsException.class, () -> transactionService.withdraw(account.getId(), new BigDecimal("60000")));
+
+        assertEquals(new BigDecimal("50000"), account.getBalance());
+        assertTrue(transactionRepository.findByAccountId(account.getId()).isEmpty());
+    }
+
+    @Test
+    public void withdrawalShouldRejectUnknownAccount() {
+        assertThrows(InvalidAccountException.class, () -> transactionService.withdraw(UUID.randomUUID(), new BigDecimal("10000")));
+    }
+
+    @Test
+    public void withdrawShouldAllowAmountEqualToWithdrawalLimit() {
+        account.setBalance(new BigDecimal("150000"));
+        transactionService.withdraw(account.getId(), new BigDecimal("100000"));
+
+        assertEquals(new BigDecimal("50000"), account.getBalance());
+    }
+
+    @Test
+    public void successfulWithdrawalShouldWorkAfterFailedWithdrawal() {
+        assertThrows(InsufficientFundsException.class, () -> transactionService.withdraw(account.getId(), new BigDecimal("60000")));
+
+        transactionService.withdraw(account.getId(), new BigDecimal("10000"));
+
+        assertEquals(new BigDecimal("40000"), account.getBalance());
+        assertEquals(1, transactionRepository.findByAccountId(account.getId()).size());
     }
 
 }
