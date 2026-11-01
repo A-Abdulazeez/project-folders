@@ -12,4 +12,10 @@ public class Validator {
         if (request.getAccountHolderName() == null || request.getAccountHolderName().isBlank()) throw new InvalidAccountNameException("Account holder name Cannot be Blank");
         if (request.getOpeningBalance() == null || request.getOpeningBalance().compareTo(BigDecimal.ZERO) < 0) throw new InvalidAmountException("Opening Balance cannot be negative");
     }
+
+    public static void validate(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidAmountException("Amount must be greater than zero");
+        }
+    }
 }

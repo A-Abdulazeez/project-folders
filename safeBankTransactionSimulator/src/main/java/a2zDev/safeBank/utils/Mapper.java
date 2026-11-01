@@ -1,8 +1,10 @@
 package a2zDev.safeBank.utils;
 
 import a2zDev.safeBank.data.model.Account;
+import a2zDev.safeBank.data.model.Transaction;
 import a2zDev.safeBank.dtos.request.CreateAccountRequest;
 import a2zDev.safeBank.dtos.response.AccountResponse;
+import a2zDev.safeBank.dtos.response.TransactionResponse;
 
 public class Mapper {
 
@@ -21,5 +23,16 @@ public class Mapper {
         accountResponse.setAccountId(account.getId());
 
         return accountResponse;
+    }
+
+    public static TransactionResponse map(Transaction transaction) {
+        TransactionResponse response = new TransactionResponse();
+        response.setTransactionId(transaction.getId());
+        response.setType(transaction.getType());
+        response.setAmount(transaction.getAmount());
+        response.setBalanceAfter(transaction.getBalanceAfter());
+        response.setCreatedAt(transaction.getCreatedAt());
+
+        return response;
     }
 }
