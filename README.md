@@ -4,7 +4,7 @@ Project Reflection
 
 Abdullahi Abdulazeez
 
-The Safe Bank Transaction Simulator demonstrates basic banking operations, including deposits, withdrawals, and balance checking. Working on this project highlights the importance of transaction accuracy, security, and proper validation when handling financial operations.
+The Safe Bank Transaction Simulator demonstrates basic banking operations, including deposits, withdrawals, and balance checking.
 
 Testing and Checklist
 
